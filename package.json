@@ -1,0 +1,23 @@
+{
+  "name": "api-rest-node-sequelize-mysql",
+  "version": "1.0.0",
+  "description": "API Nodejs With ORM Sequelize and MySql",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "nodemon api/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.0",
+    "express": "^4.18.1",
+    "mysql2": "^2.3.3",
+    "path": "^0.12.7",
+    "sequelize": "^6.21.6",
+    "sequelize-cli": "^6.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
+  }
+}
