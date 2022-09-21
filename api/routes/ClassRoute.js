@@ -3,6 +3,6 @@ const classRoute = require("../controllers/ClassController")
 
 const router = Router()
 
-router.get("/class", classRoute.getLevel)
+router.get("/class", classRoute.getClasses)
 
 module.exports = router

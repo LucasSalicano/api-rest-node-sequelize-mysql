@@ -1,6 +1,9 @@
 const database = require("../models")
 
 class PeopleController {
+    static STATUS_CONFIRMED = "confirmed"
+    static STATUS_CANCELLED = "cancelled"
+
     static async getPeople(req, res) {
         try {
             const people = await database.People.findAll()
@@ -62,7 +65,7 @@ class PeopleController {
                 return res.status(400).json({message: "People doesn't exists."})
             }
 
-            return res.json({message: "successful people update."})
+            return res.json({message: "successful updated registry."})
         } catch (error) {
             return res.status(500).json("Error: " + error.message)
         }
@@ -83,13 +86,28 @@ class PeopleController {
                 }
             })
 
-            return res.send({message: "success people deleted."})
+            return res.send({message: "successful deleted registry."})
         } catch (error) {
             return res.status(500).json("Error: " + error.message)
         }
     }
 
-    static async findEnrollmentByStudent(req, res) {
+    static async restorePeople(req, res) {
+        try {
+            const peopleId = req.params.id
+            await database.People.restore({
+                where: {
+                    id: Number(peopleId)
+                }
+            })
+
+            return res.send({message: "successful restored registry."})
+        } catch (error) {
+            return res.status(500).json("Error: " + error.message)
+        }
+    }
+
+    static async getEnrollmentByStudent(req, res) {
         try {
             const {enrollmentId, studentId} = req.params
 
@@ -130,7 +148,7 @@ class PeopleController {
                 }
             })
 
-            return res.json({message: "successful enrollment update."})
+            return res.json({message: "registration successfully updated."})
         } catch (error) {
             return res.status(500).json("Error: " + error.message)
         }
@@ -151,7 +169,85 @@ class PeopleController {
                 return res.status(400).json({message: "Enrollment doesn't exist."})
             }
 
-            return res.send({message: "success enrollment deleted."})
+            return res.send({message: "registration successfully deleted."})
+        } catch (error) {
+            return res.status(500).json("Error: " + error.message)
+        }
+    }
+
+    static async getClassesByEnrollment(req, res) {
+        try {
+            const studentId = req.params.id
+            const people = await database.People.findOne({
+                where: {
+                    id: Number(studentId)
+                }
+            })
+
+            const enrollments = await people.getRegisteredClasses()
+
+            if (!enrollments.length) {
+                return res.status(204).send()
+            }
+
+            return res.json(enrollments)
+
+        } catch (error) {
+            return res.status(500).json("Error: " + error.message)
+        }
+    }
+
+    static async getEnrollmentByClass(req, res) {
+        try {
+            const classId = req.params.id
+            const getAllEnrollment = await database.Enrollment.findAndCountAll({
+                where: {
+                    class_id: Number(classId),
+                    status: PeopleController.STATUS_CONFIRMED
+                },
+                limit: 20,
+                order: [["createdAt", "DESC"]]
+            })
+
+            if (!getAllEnrollment.length) {
+                return res.status(204).send()
+            }
+
+            return res.json(getAllEnrollment)
+        } catch (error) {
+            return res.status(500).json("Error: " + error.message)
+        }
+    }
+
+    static async inactivateRecord(req, res) {
+        try {
+            const studentId = req.params.id
+
+            const people = await database.People.findByPk(studentId)
+
+            if (!people.active) {
+                return res.status(400).json({message: "Registration has already been deactivated."})
+            }
+
+            database.sequelize.transaction(async transaction => {
+                await database.People.update({
+                    active: false
+                }, {
+                    where: {
+                        id: Number(studentId)
+                    }
+                })
+
+                await database.Enrollment.update({
+                    status: "cancelled"
+                }, {
+                    where: {
+                        student_id: Number(studentId)
+                    }
+                })
+            })
+
+            return res.json({message: "Registration has been successfully deactivated!"})
         } catch (error) {
             return res.status(500).json("Error: " + error.message)
         }
